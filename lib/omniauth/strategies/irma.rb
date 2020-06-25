@@ -1,8 +1,6 @@
 module OmniAuth
   module Strategies
     class Irma
-      class Engine < Rails::Engine; end
-
       include OmniAuth::Strategy
 
       option :fields, %i[email zipcode over18 gender]
