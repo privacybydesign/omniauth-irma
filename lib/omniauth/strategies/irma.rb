@@ -9,6 +9,7 @@ module OmniAuth
       option :irma_server, "http://localhost:8088"
       option :attrs_register, [[["pbdf.pbdf.email.email"]],[["pbdf.gemeente.address.zipcode","pbdf.gemeente.personalData.over18","pbdf.gemeente.personalData.gender"]]]
       option :attrs_login, [[["pbdf.pbdf.email.email"]]]
+      option :requestor_token, ""
 
       LOOKUP = {
         "pbdf.pbdf.email.email" => {:key => :email},
@@ -21,9 +22,10 @@ module OmniAuth
       def request_phase
         registering = !Rack::Utils.parse_nested_query(request.query_string)["register"].nil?
         disclose = registering ? options[:attrs_register].to_json : options[:attrs_login].to_json
-        res = Faraday.post("#{options[:irma_server]}/session",
-          "{\"@context\":\"https://irma.app/ld/request/disclosure/v2\",\"disclose\":#{disclose}}", 
-          "Content-Type" => "application/json").body
+        body = "{\"@context\":\"https://irma.app/ld/request/disclosure/v2\",\"disclose\":#{disclose}}"
+        headers = {"Content-Type" => "application/json"}
+        headers["Authorization"] = options[:requestor_token] if options[:requestor_token].present?
+        res = Faraday.post("#{options[:irma_server]}/session", body, headers).body
         Rack::Response.new(res, 200, "content-type" => "application/json").finish
       end
 
